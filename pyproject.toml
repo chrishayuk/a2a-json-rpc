@@ -1,16 +1,16 @@
 [build-system]
-requires    = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires       = ["setuptools>=61.0", "wheel"]
+build-backend  = "setuptools.build_meta"
 
 [project]
-name = "a2a-json-rpc"
-version = "0.1.1"
-description = "JSON-RPC implementation for the A2A (Agent-to-Agent) Protocol"
-readme = "README.md"
+name            = "a2a-json-rpc"
+version         = "0.1.2"
+description     = "JSON-RPC implementation for the A2A (Agent-to-Agent) Protocol"
+readme          = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
-authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+license         = { text = "MIT" }
+authors         = [
+    { name = "Your Name", email = "your.email@example.com" }
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -28,17 +28,25 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.3.5",
-    "pytest-asyncio>=0.23.0",  # Adding this to fix the asyncio warnings
+    "pytest-asyncio>=0.23.0",
 ]
+
+[tool.setuptools]
+# ⇩ ensure package data is included ⇩
+include-package-data = true
+
+[tool.setuptools.package-data]
+# ⇩ map your package to include the JSON spec file ⇩
+"a2a_json_rpc" = ["a2a_spec.json"]
 
 [tool.setuptools.packages.find]
 where   = ["src"]
 include = ["a2a_json_rpc*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["src"]
-addopts = "-v"
+testpaths   = ["tests"]
+pythonpath  = ["src"]
+addopts     = "-v"
 
 [dependency-groups]
 dev = [
