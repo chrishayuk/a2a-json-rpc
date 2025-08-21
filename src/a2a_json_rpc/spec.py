@@ -411,7 +411,7 @@ class TaskQueryParams(BaseModel):
 
 class TaskState(Enum):
     """
-    An enumeration.
+    Task state enumeration according to A2A Protocol specification.
     """
 
     submitted = 'submitted'
@@ -420,6 +420,8 @@ class TaskState(Enum):
     completed = 'completed'
     canceled = 'canceled'
     failed = 'failed'
+    rejected = 'rejected'
+    auth_required = 'auth-required'
     unknown = 'unknown'
 
 
@@ -590,9 +592,7 @@ class TaskSendParams(BaseModel):
         populate_by_name=True,
     )
     id: Annotated[str, Field(title='Id')]
-    session_id: Annotated[str | None, Field(alias='sessionId', title='Sessionid')] = (
-        None
-    )
+    session_id: Annotated[str, Field(alias='sessionId', title='Sessionid')]
     message: Message
     push_notification: Annotated[Any | None, Field(alias='pushNotification')] = None
     history_length: Annotated[Any | None, Field(alias='historyLength', title='HistoryLength')
