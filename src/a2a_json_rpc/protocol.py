@@ -26,6 +26,8 @@ from a2a_json_rpc.a2a_errors import (
     TaskNotCancelableError,
     PushNotificationsNotSupportedError,
     UnsupportedOperationError,
+    TaskRejectedError,
+    AuthenticationRequiredError,
 )
 
 # logging

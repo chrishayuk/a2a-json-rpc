@@ -53,12 +53,16 @@ if __name__ == "__main__":
 
 ## A2A Protocol Support
 
-The library implements the A2A Protocol specification, which defines a standard way for AI agents to communicate with each other. The implementation includes:
+The library implements the latest A2A Protocol specification (2025), which defines a standard way for AI agents to communicate with each other. The implementation includes:
 
-- Task management operations
-- Push notification handling
-- Streaming support
-- Message history tracking
+- **Task management operations** with full lifecycle support
+- **Push notification handling** for asynchronous communication
+- **Streaming support** for real-time interaction
+- **Message history tracking** with configurable length
+- **Enhanced task states** including `rejected` and `auth-required`
+- **Comprehensive error handling** with A2A-specific error codes
+- **Agent discovery** via Agent Cards
+- **Multi-modal communication** (text, files, data)
 
 ## Error Handling
 
@@ -66,7 +70,12 @@ The library provides a comprehensive set of error types:
 
 ```python
 from a2a_json_rpc.json_rpc_errors import ParseError, InvalidRequestError
-from a2a_json_rpc.a2a_errors import TaskNotFoundError, PushNotificationsNotSupportedError
+from a2a_json_rpc.a2a_errors import (
+    TaskNotFoundError, 
+    PushNotificationsNotSupportedError,
+    TaskRejectedError,
+    AuthenticationRequiredError
+)
 
 # JSON-RPC standard errors
 raise ParseError("Invalid JSON payload")
@@ -75,6 +84,8 @@ raise InvalidRequestError("Missing required field")
 # A2A-specific errors
 raise TaskNotFoundError(data={"id": "task-123"})
 raise PushNotificationsNotSupportedError()
+raise TaskRejectedError("Task was rejected by the agent")
+raise AuthenticationRequiredError("Authentication is required")
 ```
 
 ## Transport Layer

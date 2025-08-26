@@ -1794,13 +1794,14 @@
         },
         "required": [
           "id",
+          "sessionId",
           "message"
         ],
         "title": "TaskSendParams",
         "type": "object"
       },
       "TaskState": {
-        "description": "An enumeration.",
+        "description": "Task state enumeration according to A2A Protocol specification.",
         "enum": [
           "submitted",
           "working",
@@ -1808,6 +1809,8 @@
           "completed",
           "canceled",
           "failed",
+          "rejected",
+          "auth-required",
           "unknown"
         ],
         "title": "TaskState",
@@ -2016,6 +2019,78 @@
           "data"
         ],
         "title": "UnsupportedOperationError",
+        "type": "object"
+      },
+      "TaskRejectedError": {
+        "properties": {
+          "code": {
+            "const": -32005,
+            "default": -32005,
+            "description": "Error code",
+            "examples": [
+              -32005
+            ],
+            "title": "Code",
+            "type": "integer"
+          },
+          "message": {
+            "const": "Task was rejected",
+            "default": "Task was rejected",
+            "description": "A short description of the error",
+            "examples": [
+              "Task was rejected"
+            ],
+            "title": "Message",
+            "type": "string"
+          },
+          "data": {
+            "const": null,
+            "default": null,
+            "title": "Data"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ],
+        "title": "TaskRejectedError",
+        "type": "object"
+      },
+      "AuthenticationRequiredError": {
+        "properties": {
+          "code": {
+            "const": -32006,
+            "default": -32006,
+            "description": "Error code",
+            "examples": [
+              -32006
+            ],
+            "title": "Code",
+            "type": "integer"
+          },
+          "message": {
+            "const": "Authentication is required",
+            "default": "Authentication is required",
+            "description": "A short description of the error",
+            "examples": [
+              "Authentication is required"
+            ],
+            "title": "Message",
+            "type": "string"
+          },
+          "data": {
+            "const": null,
+            "default": null,
+            "title": "Data"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "data"
+        ],
+        "title": "AuthenticationRequiredError",
         "type": "object"
       },
       "A2ARequest": {

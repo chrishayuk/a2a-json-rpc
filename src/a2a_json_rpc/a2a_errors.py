@@ -26,3 +26,13 @@ class PushNotificationsNotSupportedError(JSONRPCError):
 class UnsupportedOperationError(JSONRPCError):
     """An operation is not supported by this agent."""
     CODE = A2AErrorCode.UNSUPPORTED_OPERATION
+
+
+class TaskRejectedError(JSONRPCError):
+    """A task was rejected by the agent."""
+    CODE = A2AErrorCode.TASK_REJECTED
+
+
+class AuthenticationRequiredError(JSONRPCError):
+    """Authentication is required to perform this operation."""
+    CODE = A2AErrorCode.AUTHENTICATION_REQUIRED

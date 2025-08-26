@@ -135,6 +135,8 @@ class TestTaskModels:
         assert TaskState.completed.value == "completed"
         assert TaskState.canceled.value == "canceled"
         assert TaskState.failed.value == "failed"
+        assert TaskState.rejected.value == "rejected"
+        assert TaskState.auth_required.value == "auth-required"
         assert TaskState.unknown.value == "unknown"
 
     def test_task_status(self):
