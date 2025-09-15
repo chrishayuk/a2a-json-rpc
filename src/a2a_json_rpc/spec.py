@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, Dict, List, Literal, Union
+from typing import Annotated, Any, Dict, List, Literal, Union, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
 
@@ -28,6 +28,17 @@ class AgentAuthentication(BaseModel):
     credentials: Annotated[Any | None, Field(title='Credentials')] = None
 
 
+# AgentExtension: declared before capabilities for clarity
+class AgentExtension(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    uri: Annotated[str, Field(title='Uri')]
+    description: Annotated[str | None, Field(title='Description')] = None
+    required: Annotated[bool | None, Field(title='Required')] = False
+    params: Annotated[Dict[str, Any] | None, Field(title='Params')] = None
+
+
 class AgentCapabilities(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -40,6 +51,9 @@ class AgentCapabilities(BaseModel):
         bool | None,
         Field(alias='stateTransitionHistory', title='Statetransitionhistory'),
     ] = False
+    extensions: Annotated[
+        List[AgentExtension] | None, Field(title='Extensions')
+    ] = None
 
 
 class AgentProvider(BaseModel):
@@ -56,13 +70,22 @@ class AgentSkill(BaseModel):
     )
     id: Annotated[str, Field(title='Id')]
     name: Annotated[str, Field(title='Name')]
-    description: Annotated[Any | None, Field(title='Description')] = None
-    tags: Annotated[Any | None, Field(title='Tags')] = None
-    examples: Annotated[Any | None, Field(title='Examples')] = None
-    input_modes: Annotated[Any | None, Field(alias='inputModes', title='Inputmodes')] = None
-    output_modes: Annotated[Any | None, Field(alias='outputModes', title='Outputmodes')] = (
-        None
+    description: Annotated[str, Field(title='Description')]
+    tags: Annotated[List[str], Field(title='Tags')]
+    examples: Annotated[List[str] | None, Field(title='Examples')] = None
+    input_modes: Annotated[List[str] | None, Field(alias='inputModes', title='Inputmodes')] = None
+    output_modes: Annotated[List[str] | None, Field(alias='outputModes', title='Outputmodes')] = None
+    security: Annotated[List[Dict[str, List[str]]] | None, Field(title='Security')] = None
+
+
+
+class AgentCardSignature(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
     )
+    protected: Annotated[str, Field(title='Protected')]  # base64url-encoded JSON header
+    signature: Annotated[str, Field(title='Signature')]
+    header: Annotated[Dict[str, Any] | None, Field(title='Header')] = None
 
 
 class AuthenticationInfo(BaseModel):
@@ -71,6 +94,63 @@ class AuthenticationInfo(BaseModel):
     )
     schemes: Annotated[List[str], Field(title='Schemes')]
     credentials: Annotated[Any | None, Field(title='Credentials')] = None
+
+
+# Security scheme models (OpenAPI-like)
+class APIKeySecurityScheme(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    type: Annotated[Literal['apiKey'], Field(title='Type')] = 'apiKey'
+    name: Annotated[str, Field(title='Name')]
+    in_: Annotated[str, Field(alias='in', title='In')]
+    description: Annotated[Any | None, Field(title='Description')] = None
+
+
+class HTTPAuthSecurityScheme(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    type: Annotated[Literal['http'], Field(title='Type')] = 'http'
+    scheme: Annotated[str, Field(title='Scheme')]
+    bearer_format: Annotated[Any | None, Field(alias='bearerFormat', title='Bearerformat')] = None
+    description: Annotated[Any | None, Field(title='Description')] = None
+
+
+class OAuth2SecurityScheme(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    type: Annotated[Literal['oauth2'], Field(title='Type')] = 'oauth2'
+    flows: Annotated[Dict[str, Any], Field(title='Flows')]
+    description: Annotated[Any | None, Field(title='Description')] = None
+
+
+class OpenIdConnectSecurityScheme(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    type: Annotated[Literal['openIdConnect'], Field(title='Type')] = 'openIdConnect'
+    open_id_connect_url: Annotated[str, Field(alias='openIdConnectUrl', title='Openidconnecturl')]
+    description: Annotated[Any | None, Field(title='Description')] = None
+
+
+class MutualTLSSecurityScheme(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    type: Annotated[Literal['mutualTLS'], Field(title='Type')] = 'mutualTLS'
+    description: Annotated[Any | None, Field(title='Description')] = None
+
+
+# Union type alias for all supported security schemes
+SecurityScheme = Union[
+    APIKeySecurityScheme,
+    HTTPAuthSecurityScheme,
+    OAuth2SecurityScheme,
+    OpenIdConnectSecurityScheme,
+    MutualTLSSecurityScheme,
+]
 
 
 class PushNotificationNotSupportedError(BaseModel):
@@ -272,6 +352,20 @@ class JSONRPCResponse(BaseModel):
 class Role(Enum):
     user = 'user'
     agent = 'agent'
+
+
+class TransportProtocol(str, Enum):
+    JSONRPC = 'JSONRPC'
+    GRPC = 'GRPC'
+    HTTP_JSON = 'HTTP+JSON'
+
+
+class AgentInterface(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    url: Annotated[str, Field(title='Url')]
+    transport: Annotated[TransportProtocol | str, Field(title='Transport')]
 
 
 class MethodNotFoundError(BaseModel):
@@ -491,26 +585,7 @@ class A2ARequest(RootModel[None]):
     root: Annotated[Any | None, Field(title='A2ARequest')]
 
 
-class AgentCard(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    name: Annotated[str, Field(title='Name')]
-    description: Annotated[Any | None, Field(title='Description')] = None
-    url: Annotated[str, Field(title='Url')]
-    provider: None = None
-    version: Annotated[str, Field(title='Version')]
-    documentation_url: Annotated[Any | None, Field(alias='documentationUrl', title='Documentationurl')
-    ] = None
-    capabilities: AgentCapabilities
-    authentication: None = None
-    default_input_modes: Annotated[
-        List[str] | None, Field(alias='defaultInputModes', title='Defaultinputmodes')
-    ] = ['text']
-    default_output_modes: Annotated[
-        List[str] | None, Field(alias='defaultOutputModes', title='Defaultoutputmodes')
-    ] = ['text']
-    skills: Annotated[List[AgentSkill], Field(title='Skills')]
+
 
 
 class Artifact(BaseModel):
@@ -627,3 +702,29 @@ class SendTaskStreamingRequest(BaseModel):
     id: Annotated[Any | None, Field(title='Id')] = None
     method: Annotated[Literal['tasks/sendSubscribe'], Field(title='Method')]
     params: TaskSendParams
+
+
+class AgentCard(BaseModel):
+    """A self-describing manifest for an agent."""
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    protocol_version: Annotated[str, Field(alias='protocolVersion')] = '0.3.0'
+    name: Annotated[str, Field(title='Name')]
+    description: Annotated[str | None, Field(title='Description')] = None
+    url: Annotated[str, Field(title='Url')]
+    preferred_transport: Annotated[TransportProtocol | str | None, Field(alias='preferredTransport')] = TransportProtocol.JSONRPC
+    additional_interfaces: Annotated[List[AgentInterface] | None, Field(alias='additionalInterfaces')] = None
+    icon_url: Annotated[str | None, Field(alias='iconUrl')] = None
+    provider: Annotated[AgentProvider | None, Field(title='Provider')] = None
+    version: Annotated[str, Field(title='Version')]
+    documentation_url: Annotated[str | None, Field(alias='documentationUrl')] = None
+    capabilities: AgentCapabilities
+    authentication: Annotated[AgentAuthentication | None, Field(title='Authentication')] = None
+    security_schemes: Annotated[Dict[str, SecurityScheme] | None, Field(alias='securitySchemes')] = None
+    security: Annotated[List[Dict[str, List[str]]] | None, Field(title='Security')] = None
+    default_input_modes: Annotated[List[str], Field(alias='defaultInputModes')] = ['text']
+    default_output_modes: Annotated[List[str], Field(alias='defaultOutputModes')] = ['text']
+    skills: Annotated[List[AgentSkill], Field(title='Skills')]
+    supports_authenticated_extended_card: Annotated[bool, Field(alias='supportsAuthenticatedExtendedCard')] = False
+    signatures: Annotated[List[AgentCardSignature] | None, Field(title='Signatures')] = None
