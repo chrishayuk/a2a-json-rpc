@@ -16,8 +16,8 @@ OUTPUT_PATH="${2:-$REPO_ROOT/src/a2a/models.py}"
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
 # ---------------- 0. Ensure code‑gen is up‑to‑date -------------------------
-echo "[generate_models] Ensuring datamodel-code-generator ≥ 0.25.8..."
-pip install --upgrade "datamodel-code-generator>=0.25.8"
+# echo "[generate_models] Ensuring datamodel-code-generator ≥ 0.34.0..."
+# pip install --upgrade "datamodel-code-generator>=0.34.0"
 
 # --------------- 1. Fix schema for null‐const values ----------------------
 echo "[generate_models] Patching schema for null constants..."
