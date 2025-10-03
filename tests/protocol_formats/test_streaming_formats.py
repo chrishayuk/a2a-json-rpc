@@ -1,23 +1,6 @@
-# tests/protocol_formats/test_conversation_formats.py
+# tests/protocol_formats/test_streaming_formats.py
 """
-Tests for A2A Streaming formats based on the        # Third chunk - additional artifact content (append)
-        chunk3 = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "result": {
-                "id": task_id,
-                "artifact": {
-                    "parts": [
-                        {"kind": "text", "text": "<section 2...>"}
-                    ],
-                    "index": 0,
-                    "append": True,
-                    "lastChunk": False
-                }
-            }
-        }
-This file contains tests that validate the request and response formats
-for streaming operations as defined in the A2A specification.
+Tests for A2A Streaming formats based on the specification.
 """
 import pytest
 import json
@@ -262,3 +245,14 @@ class TestResubscribeFormat:
                 }
             }
         }
+
+        # Validate chunk structure
+        for response in [response1, response2]:
+            assert response["jsonrpc"] == "2.0"
+            assert "result" in response
+            assert "id" in response["result"]
+            assert "artifact" in response["result"]
+            assert "parts" in response["result"]["artifact"]
+            assert "index" in response["result"]["artifact"]
+            assert "append" in response["result"]["artifact"]
+            assert "lastChunk" in response["result"]["artifact"]

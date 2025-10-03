@@ -1,188 +1,143 @@
 # tests/test_protocol.py
 """
-JSON-RPC 2.0 dispatcher for A2A (Agent-to-Agent) interoperability.
-Transport-agnostic: parse, validate, dispatch, serialize responses.
+Tests for the JSONRPCProtocol class.
 """
-from __future__ import annotations
+import pytest
 import json
-import logging
-import pkgutil
-import anyio
-from inspect import iscoroutinefunction
-from typing import Any, Awaitable, Callable, Dict, Optional, Union
-from typing_extensions import ParamSpec, Concatenate
+from unittest.mock import MagicMock, AsyncMock
 
-# a2a
-from a2a_json_rpc.models import Request, Response, Json
-from a2a_json_rpc.json_rpc_errors import (
-    JSONRPCError,
-    ParseError,
-    InvalidRequestError,
-    MethodNotFoundError,
-    InternalError,
-)
-from a2a_json_rpc.a2a_errors import (
-    TaskNotFoundError,
-    TaskNotCancelableError,
-    PushNotificationsNotSupportedError,
-    UnsupportedOperationError,
-    ContentTypeNotSupportedError,
-    InvalidAgentResponseError,
-    AuthenticatedExtendedCardNotConfiguredError,
-)
-
-# logging
-logger = logging.getLogger(__name__)
-
-P = ParamSpec("P")
-Handler = Callable[Concatenate[str, P], Any | Awaitable[Any]]
+from a2a_json_rpc.protocol import JSONRPCProtocol
+from a2a_json_rpc.json_rpc_errors import ParseError, InvalidRequestError, MethodNotFoundError, InternalError
 
 
-class JSONRPCProtocol:
-    """Dispatch JSON-RPC 2.0 requests to registered handlers."""
+@pytest.fixture
+def protocol():
+    """Returns a JSONRPCProtocol instance for testing."""
+    return JSONRPCProtocol()
 
-    def __init__(self) -> None:
-        # Load the A2A JSON‑RPC schema from the bundled file (or create empty)
-        try:
-            data = pkgutil.get_data(__package__, "a2a_spec.json")
-            if data is None:
-                logger.warning("Could not load bundled a2a_spec.json")
-                self._schema = {}
-            else:
-                self._schema = json.loads(data)
-        except Exception as e:
-            logger.warning(f"Error loading schema: {e}")
-            self._schema = {}
 
-        # Method registry and ID counter
-        self._methods: Dict[str, Handler] = {}
-        self._id_counter = 0
+class TestJSONRPCProtocol:
+    """Tests for the JSONRPCProtocol class."""
 
-    def register(self, name: str, func: Handler, /) -> None:
-        """Register a handler for the given method name."""
-        self._methods[name] = func
+    def test_register_method(self, protocol):
+        """Test that a method can be registered."""
+        def handler(method, params):
+            return "test"
+        
+        protocol.register("test_method", handler)
+        assert "test_method" in protocol._methods
+        assert protocol._methods["test_method"] == handler
 
-    def method(self, name: str):
-        """Decorator to register a method handler."""
-        def decorator(func: Handler) -> Handler:
-            self.register(name, func)
-            return func
-        return decorator
+    def test_method_decorator(self, protocol):
+        """Test the method decorator for registration."""
+        @protocol.method("decorated_method")
+        def handler(method, params):
+            return "decorated"
+        
+        assert "decorated_method" in protocol._methods
+        assert protocol._methods["decorated_method"] == handler
 
-    def next_id(self) -> int:
-        """Generate a new unique request ID."""
-        self._id_counter += 1
-        return self._id_counter
+    def test_create_request(self, protocol):
+        """Test creating a JSON-RPC request."""
+        request = protocol.create_request("test_method", {"param": "value"}, id="test-id")
+        assert request["jsonrpc"] == "2.0"
+        assert request["id"] == "test-id"
+        assert request["method"] == "test_method"
+        assert request["params"] == {"param": "value"}
 
-    def create_request(
-        self, method: str, params: Any = None, *, id: Optional[Union[int, str]] = None
-    ) -> Json:
-        """Build a JSON-RPC request object as a dict."""
-        if id is None:
-            id = self.next_id()
-        return Request(id=id, method=method, params=params).model_dump(exclude_none=True)
+    def test_create_notification(self, protocol):
+        """Test creating a JSON-RPC notification."""
+        notification = protocol.create_notification("test_event", {"param": "value"})
+        assert notification["jsonrpc"] == "2.0"
+        assert "id" not in notification
+        assert notification["method"] == "test_event"
+        assert notification["params"] == {"param": "value"}
 
-    def create_notification(self, method: str, params: Any = None) -> Json:
-        """Build a JSON-RPC notification (no ID)."""
-        return Request(method=method, params=params).model_dump(exclude_none=True)
+    @pytest.mark.asyncio
+    async def test_handle_raw_valid_request(self, protocol):
+        """Test handling a valid raw JSON-RPC request."""
+        @protocol.method("test_method")
+        def handler(method, params):
+            return f"processed {params['param']}"
+        
+        request = '{"jsonrpc": "2.0", "id": 1, "method": "test_method", "params": {"param": "value"}}'
+        response = await protocol._handle_raw_async(request)
+        
+        assert response["jsonrpc"] == "2.0"
+        assert response["id"] == 1
+        assert response["result"] == "processed value"
 
-    def handle_raw(self, raw: str | bytes | Json) -> Optional[Json]:
-        """Synchronous wrapper to parse and dispatch via anyio."""
-        return anyio.run(self._handle_raw_async, raw)
+    @pytest.mark.asyncio
+    async def test_handle_raw_notification(self, protocol):
+        """Test handling a raw notification."""
+        handler_mock = MagicMock()
+        
+        @protocol.method("test_event")
+        def handler(method, params):
+            handler_mock(params)
+        
+        notification = '{"jsonrpc": "2.0", "method": "test_event", "params": {"param": "value"}}'
+        response = await protocol._handle_raw_async(notification)
+        
+        assert response is None
+        handler_mock.assert_called_once_with({"param": "value"})
 
-    async def _handle_raw_async(self, raw: str | bytes | Json) -> Optional[Json]:
-        # 1) PARSE: JSON or schema errors get id=None
-        try:
-            req = self._parse(raw)
-        except JSONRPCError as exc:
-            return self._error_response(None, exc)
+    @pytest.mark.asyncio
+    async def test_handle_raw_parse_error(self, protocol):
+        """Test handling a JSON parse error."""
+        invalid_json = '{"jsonrpc": "2.0", "id": 1, "method": "test_method"'
+        response = await protocol._handle_raw_async(invalid_json)
+        
+        assert response["jsonrpc"] == "2.0"
+        assert response["id"] is None
+        assert response["error"]["code"] == ParseError.CODE
+        assert "Invalid JSON payload" in response["error"]["message"]
 
-        # 2) DISPATCH: preserve req.id on errors
-        try:
-            if req.id is None:
-                # notification → invoke and drop result
-                await self._invoke(req)
-                return None
-            result = await self._invoke(req)
-            return Response(id=req.id, result=result).model_dump(exclude_none=True)
-        except JSONRPCError as exc:
-            return self._error_response(req.id, exc)
+    @pytest.mark.asyncio
+    async def test_handle_raw_invalid_request(self, protocol):
+        """Test handling an invalid request object."""
+        invalid_request = '{"jsonrpc": "2.0", "id": 1}'  # Missing 'method'
+        response = await protocol._handle_raw_async(invalid_request)
+        
+        assert response["jsonrpc"] == "2.0"
+        assert response["id"] is None
+        assert response["error"]["code"] == InvalidRequestError.CODE
+        assert "Request validation error" in response["error"]["message"]
 
-    def _parse(self, raw: str | bytes | Json) -> Request:
-        if isinstance(raw, (str, bytes)):
-            try:
-                text = raw.decode() if isinstance(raw, bytes) else raw
-                data = json.loads(text)
-            except Exception as e:
-                raise ParseError(f"Invalid JSON payload: {e}")
-        else:
-            data = raw
-        try:
-            return Request.model_validate(data)
-        except Exception as e:
-            raise InvalidRequestError(f"Request validation error: {e}")
+    @pytest.mark.asyncio
+    async def test_handle_raw_method_not_found(self, protocol):
+        """Test handling a request for a non-existent method."""
+        request = '{"jsonrpc": "2.0", "id": 1, "method": "nonexistent_method", "params": {}}'
+        response = await protocol._handle_raw_async(request)
+        
+        assert response["jsonrpc"] == "2.0"
+        assert response["id"] == 1
+        assert response["error"]["code"] == MethodNotFoundError.CODE
+        assert "not found" in response["error"]["message"]
 
-    async def _invoke(self, req: Request) -> Any:
-        """Invoke the registered handler, raising JSONRPCError or returning result."""
-        if req.method not in self._methods:
-            raise MethodNotFoundError(f"Method '{req.method}' not found")
-        handler = self._methods[req.method]
-        try:
-            if iscoroutinefunction(handler):
-                return await handler(req.method, req.params)
-            return handler(req.method, req.params)
-        except JSONRPCError:
-            raise
-        except Exception as e:
-            logger.exception("Error in handler %s", req.method)
-            raise InternalError(f"Internal error: {e}")
+    @pytest.mark.asyncio
+    async def test_handle_raw_internal_error(self, protocol):
+        """Test handling an internal error in a handler."""
+        @protocol.method("error_method")
+        def handler(method, params):
+            raise ValueError("Something went wrong")
+        
+        request = '{"jsonrpc": "2.0", "id": 1, "method": "error_method", "params": {}}'
+        response = await protocol._handle_raw_async(request)
+        
+        assert response["jsonrpc"] == "2.0"
+        assert response["id"] == 1
+        assert response["error"]["code"] == InternalError.CODE
+        assert "Internal error" in response["error"]["message"]
 
-    @staticmethod
-    def _error_response(req_id: Optional[Union[int, str]], exc: JSONRPCError) -> Json:
-        """Format a JSON-RPC error response object."""
-        return Response(id=req_id, error=exc.to_dict()).model_dump(exclude_none=True)
-
-    # A2A-specific helpers
-
-    @staticmethod
-    def task_not_found(task_id: str) -> TaskNotFoundError:
-        """Helper to create a TaskNotFoundError with the task ID in data."""
-        return TaskNotFoundError("Task not found", data={"id": task_id})
-
-    @staticmethod
-    def task_not_cancelable(task_id: str) -> TaskNotCancelableError:
-        """Helper to create a TaskNotCancelableError with the task ID in data."""
-        return TaskNotCancelableError("Task cannot be canceled", data={"id": task_id})
-
-    @staticmethod
-    def push_notifications_not_supported() -> PushNotificationsNotSupportedError:
-        """Helper to create a PushNotificationsNotSupportedError."""
-        return PushNotificationsNotSupportedError("Push notification is not supported")
-
-    @staticmethod
-    def unsupported_operation(op: str) -> UnsupportedOperationError:
-        """Helper to create an UnsupportedOperationError with the operation in data."""
-        return UnsupportedOperationError("This operation is not supported", data={"operation": op})
-
-    @staticmethod
-    def content_type_not_supported(content_type: str) -> ContentTypeNotSupportedError:
-        """Helper to create a ContentTypeNotSupportedError with the content type in data."""
-        return ContentTypeNotSupportedError(
-            "Content type is not supported", data={"content_type": content_type}
-        )
-
-    @staticmethod
-    def invalid_agent_response(response: Any) -> InvalidAgentResponseError:
-        """Helper to create an InvalidAgentResponseError with the response in data."""
-        return InvalidAgentResponseError(
-            "Invalid agent response", data={"response": response}
-        )
-
-    @staticmethod
-    def authenticated_extended_card_not_configured() -> (
-        AuthenticatedExtendedCardNotConfiguredError
-    ):
-        """Helper to create an AuthenticatedExtendedCardNotConfiguredError."""
-        return AuthenticatedExtendedCardNotConfiguredError(
-            "Authenticated extended card is not configured"
-        )
+    @pytest.mark.asyncio
+    async def test_async_handler(self, protocol):
+        """Test that async handlers are correctly awaited."""
+        @protocol.method("async_method")
+        async def async_handler(method, params):
+            return "async result"
+        
+        request = '{"jsonrpc": "2.0", "id": 1, "method": "async_method", "params": {}}'
+        response = await protocol._handle_raw_async(request)
+        
+        assert response["result"] == "async result"

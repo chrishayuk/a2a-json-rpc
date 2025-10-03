@@ -326,3 +326,52 @@ class TestAgentCardFormat:
                 assert "name" in scheme
             elif scheme_type == "oauth2":
                 assert "flows" in scheme
+
+    def test_get_authenticated_extended_card_format(self):
+        """Test the get authenticated extended card request and response format."""
+        # Example request
+        request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "agent/getAuthenticatedExtendedCard",
+        }
+
+        # Validate the request structure
+        assert request["jsonrpc"] == "2.0"
+        assert "id" in request
+        assert request["method"] == "agent/getAuthenticatedExtendedCard"
+
+        # Example response
+        response = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+                "name": "Authenticated Agent",
+                "description": "An agent with extended details for authenticated users",
+                "version": "1.0.0",
+                "protocolVersion": "1.0.0",
+                "url": "https://secure.example.com",
+                "defaultInputModes": ["text"],
+                "defaultOutputModes": ["text"],
+                "skills": [
+                    {
+                        "id": "auth-skill",
+                        "name": "Authenticated Skill",
+                        "description": "A skill available only to authenticated users",
+                        "tags": ["auth", "secure"]
+                    }
+                ],
+                "capabilities": {
+                    "pushNotifications": True,
+                    "taskOperations": ["create", "execute"]
+                }
+            }
+        }
+
+        # Validate the response structure
+        assert response["jsonrpc"] == "2.0"
+        assert "id" in response
+        assert "result" in response
+        assert "name" in response["result"]
+        assert "description" in response["result"]
+        assert "skills" in response["result"]
