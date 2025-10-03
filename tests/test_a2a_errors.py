@@ -8,8 +8,9 @@ from a2a_json_rpc.a2a_errors import (
     TaskNotCancelableError,
     PushNotificationsNotSupportedError,
     UnsupportedOperationError,
-    TaskRejectedError,
-    AuthenticationRequiredError,
+    ContentTypeNotSupportedError,
+    InvalidAgentResponseError,
+    AuthenticatedExtendedCardNotConfiguredError,
 )
 from a2a_json_rpc.a2a_error_codes import A2AErrorCode
 
@@ -46,20 +47,30 @@ def test_unsupported_operation_error():
     assert error.message == "Operation not supported"
 
 
-def test_task_rejected_error():
-    """Test TaskRejectedError has correct code."""
-    error = TaskRejectedError("Task was rejected")
-    assert error.CODE == A2AErrorCode.TASK_REJECTED
+def test_content_type_not_supported_error():
+    """Test ContentTypeNotSupportedError has correct code."""
+    error = ContentTypeNotSupportedError("Content type not supported")
+    assert error.CODE == A2AErrorCode.CONTENT_TYPE_NOT_SUPPORTED
     assert error.CODE == -32005
-    assert error.message == "Task was rejected"
+    assert error.message == "Content type not supported"
 
 
-def test_authentication_required_error():
-    """Test AuthenticationRequiredError has correct code."""
-    error = AuthenticationRequiredError("Authentication is required")
-    assert error.CODE == A2AErrorCode.AUTHENTICATION_REQUIRED
+def test_invalid_agent_response_error():
+    """Test InvalidAgentResponseError has correct code."""
+    error = InvalidAgentResponseError("Invalid agent response")
+    assert error.CODE == A2AErrorCode.INVALID_AGENT_RESPONSE
     assert error.CODE == -32006
-    assert error.message == "Authentication is required"
+    assert error.message == "Invalid agent response"
+
+
+def test_authenticated_extended_card_not_configured_error():
+    """Test AuthenticatedExtendedCardNotConfiguredError has correct code."""
+    error = AuthenticatedExtendedCardNotConfiguredError(
+        "Authenticated extended card not configured"
+    )
+    assert error.CODE == A2AErrorCode.AUTHENTICATED_EXTENDED_CARD_NOT_CONFIGURED
+    assert error.CODE == -32007
+    assert error.message == "Authenticated extended card not configured"
 
 
 def test_error_to_dict():

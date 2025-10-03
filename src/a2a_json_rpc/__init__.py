@@ -22,8 +22,9 @@ from a2a_json_rpc.a2a_errors import (
     TaskNotCancelableError,
     PushNotificationsNotSupportedError,
     UnsupportedOperationError,
-    TaskRejectedError,
-    AuthenticationRequiredError,
+    ContentTypeNotSupportedError,
+    InvalidAgentResponseError,
+    AuthenticatedExtendedCardNotConfiguredError,
 )
 
 __all__ = [
@@ -42,6 +43,7 @@ __all__ = [
     "TaskNotCancelableError",
     "PushNotificationsNotSupportedError",
     "UnsupportedOperationError",
-    "TaskRejectedError",
-    "AuthenticationRequiredError",
+    "ContentTypeNotSupportedError",
+    "InvalidAgentResponseError",
+    "AuthenticatedExtendedCardNotConfiguredError",
 ]
