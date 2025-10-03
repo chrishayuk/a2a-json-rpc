@@ -35,7 +35,7 @@ class TestMultiTurnConversationFormat:
                 "message": {
                     "role": "user",
                     "parts": [{
-                        "type": "text",
+                        "kind": "text",
                         "text": "request a new phone for me"
                     }]
                 },
@@ -49,13 +49,13 @@ class TestMultiTurnConversationFormat:
             "id": 1,
             "result": {
                 "id": task_id,
-                "sessionId": session_id,
+                "contextId": session_id,
                 "status": {
                     "state": "input-required",
                     "message": {
                         "role": "agent",
                         "parts": [{
-                            "type": "text",
+                            "kind": "text",
                             "text": "Select a phone type (iPhone/Android)"
                         }]
                     }
@@ -71,11 +71,11 @@ class TestMultiTurnConversationFormat:
             "method": "tasks/send",
             "params": {
                 "id": task_id,
-                "sessionId": session_id,
+                "contextId": session_id,
                 "message": {
                     "role": "user",
                     "parts": [{
-                        "type": "text",
+                        "kind": "text",
                         "text": "Android"
                     }]
                 },
@@ -89,14 +89,14 @@ class TestMultiTurnConversationFormat:
             "id": 2,
             "result": {
                 "id": task_id,
-                "sessionId": session_id,
+                "contextId": session_id,
                 "status": {
                     "state": "completed"
                 },
                 "artifacts": [{
                     "name": "order-confirmation",
                     "parts": [{
-                        "type": "text",
+                        "kind": "text",
                         "text": "I have ordered a new Android device for you. Your request number is R12443"
                     }],
                     "metadata": {}
@@ -115,7 +115,7 @@ class TestMultiTurnConversationFormat:
         assert response1["jsonrpc"] == "2.0"
         assert "result" in response1
         assert "id" in response1["result"]
-        assert "sessionId" in response1["result"]
+        assert "contextId" in response1["result"]
         assert "status" in response1["result"]
         assert response1["result"]["status"]["state"] == "input-required"
         assert "message" in response1["result"]["status"]
@@ -124,14 +124,14 @@ class TestMultiTurnConversationFormat:
         assert request2["jsonrpc"] == "2.0"
         assert request2["method"] == "tasks/send"
         assert "id" in request2["params"]
-        assert "sessionId" in request2["params"]
+        assert "contextId" in request2["params"]
         assert "message" in request2["params"]
         
         # Validate response2
         assert response2["jsonrpc"] == "2.0"
         assert "result" in response2
         assert "id" in response2["result"]
-        assert "sessionId" in response2["result"]
+        assert "contextId" in response2["result"]
         assert "status" in response2["result"]
         assert response2["result"]["status"]["state"] == "completed"
         assert "artifacts" in response2["result"]

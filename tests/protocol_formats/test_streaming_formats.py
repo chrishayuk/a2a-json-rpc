@@ -1,7 +1,21 @@
 # tests/protocol_formats/test_conversation_formats.py
 """
-Tests for A2A Streaming formats based on the specification.
-
+Tests for A2A Streaming formats based on the        # Third chunk - additional artifact content (append)
+        chunk3 = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+                "id": task_id,
+                "artifact": {
+                    "parts": [
+                        {"kind": "text", "text": "<section 2...>"}
+                    ],
+                    "index": 0,
+                    "append": True,
+                    "lastChunk": False
+                }
+            }
+        }
 This file contains tests that validate the request and response formats
 for streaming operations as defined in the A2A specification.
 """
@@ -29,14 +43,14 @@ class TestStreamingFormat:
             "method": "tasks/sendSubscribe",
             "params": {
                 "id": task_id,
-                "sessionId": session_id,
+                "contextId": session_id,
                 "message": {
                     "role": "user",
                     "parts": [{
-                        "type": "text",
+                        "kind": "text",
                         "text": "write a long paper describing the attached pictures"
                     }, {
-                        "type": "file",
+                        "kind": "file",
                         "file": {
                             "mimeType": "image/png",
                             "data": "<base64-encoded-content>"
@@ -52,7 +66,7 @@ class TestStreamingFormat:
         assert request["method"] == "tasks/sendSubscribe"
         assert "params" in request
         assert "id" in request["params"]
-        assert "sessionId" in request["params"]
+        assert "contextId" in request["params"]
         assert "message" in request["params"]
         assert "role" in request["params"]["message"]
         assert "parts" in request["params"]["message"]
@@ -60,7 +74,7 @@ class TestStreamingFormat:
         
         # Validate file part
         file_part = request["params"]["message"]["parts"][1]
-        assert file_part["type"] == "file"
+        assert file_part["kind"] == "file"
         assert "file" in file_part
         assert "mimeType" in file_part["file"]
         assert "data" in file_part["file"]
@@ -91,7 +105,7 @@ class TestStreamingFormat:
                 "id": task_id,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 1...>"}
+                        {"kind": "text", "text": "<section 1...>"}
                     ],
                     "index": 0,
                     "append": False,
@@ -108,7 +122,7 @@ class TestStreamingFormat:
                 "id": task_id,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 2...>"}
+                        {"kind": "text", "text": "<section 2...>"}
                     ],
                     "index": 0,
                     "append": True,
@@ -125,7 +139,7 @@ class TestStreamingFormat:
                 "id": 1,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 3...>"}
+                        {"kind": "text", "text": "<section 3...>"}
                     ],
                     "index": 0,
                     "append": True,
@@ -223,7 +237,7 @@ class TestResubscribeFormat:
                 "id": task_id,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 2...>"}
+                        {"kind": "text", "text": "<section 2...>"}
                     ],
                     "index": 0,
                     "append": True,
@@ -240,7 +254,7 @@ class TestResubscribeFormat:
                 "id": task_id,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 3...>"}
+                        {"kind": "text", "text": "<section 3...>"}
                     ],
                     "index": 0,
                     "append": True,
