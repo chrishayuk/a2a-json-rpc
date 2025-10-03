@@ -26,8 +26,9 @@ from a2a_json_rpc.a2a_errors import (
     TaskNotCancelableError,
     PushNotificationsNotSupportedError,
     UnsupportedOperationError,
-    TaskRejectedError,
-    AuthenticationRequiredError,
+    ContentTypeNotSupportedError,
+    InvalidAgentResponseError,
+    AuthenticatedExtendedCardNotConfiguredError,
 )
 
 # logging
@@ -152,3 +153,15 @@ class JSONRPCProtocol:
     @staticmethod
     def unsupported_operation(op: str) -> UnsupportedOperationError:
         return UnsupportedOperationError(data={"operation": op})
+
+    @staticmethod
+    def content_type_not_supported(content_type: str) -> ContentTypeNotSupportedError:
+        return ContentTypeNotSupportedError(data={"content_type": content_type})
+
+    @staticmethod
+    def invalid_agent_response(response: Any) -> InvalidAgentResponseError:
+        return InvalidAgentResponseError(data={"response": response})
+
+    @staticmethod
+    def authenticated_extended_card_not_configured() -> AuthenticatedExtendedCardNotConfiguredError:
+        return AuthenticatedExtendedCardNotConfiguredError()
