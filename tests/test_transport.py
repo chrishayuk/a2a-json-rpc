@@ -22,7 +22,7 @@ class MockHTTPTransport:
         # Mock responses for different methods
         self.mock_responses = {
             "tasks/get": {"id": "task-123", "status": {"state": "working"}},
-            "tasks/send": {"id": "task-123", "status": {"state": "completed"}},
+            "message/send": {"id": "task-123", "status": {"state": "completed"}},
             "tasks/cancel": {"id": "task-123", "status": {"state": "canceled"}},
             "error_method": None  # Will trigger an error response
         }

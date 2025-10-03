@@ -39,7 +39,7 @@ class MockProtocol(JSONRPCProtocol):
         
         # Register the mock handlers
         self.register("tasks/get", self.get_task)
-        self.register("tasks/send", self.send_task)
+        self.register("message/send", self.send_task)
         self.register("tasks/cancel", self.cancel_task)
     
     async def get_task(self, method, params):
@@ -53,7 +53,7 @@ class MockProtocol(JSONRPCProtocol):
             return None
     
     async def send_task(self, method, params):
-        """Mock implementation of tasks/send."""
+        """Mock implementation of message/send."""
         task_id = params.get('id')
         message = params.get('message')
         
@@ -61,13 +61,13 @@ class MockProtocol(JSONRPCProtocol):
         if message and message.get('role') == 'user':
             text_content = ""
             for part in message.get('parts', []):
-                if part.get('type') == 'text':
+                if part.get('kind') == 'text':
                     text_content = part.get('text', '')
                     break
             
             response_message = {
                 "role": "agent",
-                "parts": [{"type": "text", "text": f"Echo: {text_content}"}]
+                "parts": [{"kind": "text", "text": f"Echo: {text_content}"}]
             }
             return {
                 "id": task_id,
@@ -149,13 +149,13 @@ class TestTaskOperations:
         request = {
             "jsonrpc": "2.0",
             "id": 1,
-            "method": "tasks/send",
+            "method": "message/send",
             "params": {
                 "id": "task-123",
                 "message": {
                     "role": "user",
                     "parts": [
-                        {"type": "text", "text": "Hello, world!"}
+                        {"kind": "text", "text": "Hello, world!"}
                     ]
                 }
             }

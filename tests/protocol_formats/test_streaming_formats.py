@@ -23,7 +23,9 @@ class TestStreamingFormat:
         
         # Example from the spec
         request = {
-            "method": "tasks/sendSubscribe",
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "message/stream",
             "params": {
                 "id": task_id,
                 "contextId": session_id,
@@ -45,8 +47,11 @@ class TestStreamingFormat:
         }
         
         # Validate the structure
+        assert "jsonrpc" in request
+        assert request["jsonrpc"] == "2.0"
+        assert "id" in request
         assert "method" in request
-        assert request["method"] == "tasks/sendSubscribe"
+        assert request["method"] == "message/stream"
         assert "params" in request
         assert "id" in request["params"]
         assert "contextId" in request["params"]
@@ -195,6 +200,8 @@ class TestResubscribeFormat:
         
         # Example from the spec
         request = {
+            "jsonrpc": "2.0",
+            "id": 1, 
             "method": "tasks/resubscribe",
             "params": {
                 "id": task_id,
@@ -203,6 +210,9 @@ class TestResubscribeFormat:
         }
         
         # Validate the structure
+        assert "jsonrpc" in request
+        assert request["jsonrpc"] == "2.0"
+        assert "id" in request
         assert "method" in request
         assert request["method"] == "tasks/resubscribe"
         assert "params" in request

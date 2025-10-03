@@ -33,7 +33,7 @@ class TestSendTaskFormat:
         request = {
             "jsonrpc": "2.0",
             "id": 1,
-            "method": "tasks/send",
+            "method": "message/send",
             "params": {
                 "id": task_id,
                 "message": {
@@ -50,7 +50,7 @@ class TestSendTaskFormat:
         # Validate the structure
         assert request["jsonrpc"] == "2.0"
         assert "id" in request
-        assert request["method"] == "tasks/send"
+        assert request["method"] == "message/send"
         assert "params" in request
         assert "id" in request["params"]
         assert "message" in request["params"]

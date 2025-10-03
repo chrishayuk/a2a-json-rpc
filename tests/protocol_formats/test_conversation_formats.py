@@ -29,7 +29,7 @@ class TestMultiTurnConversationFormat:
         request1 = {
             "jsonrpc": "2.0",
             "id": 1,
-            "method": "tasks/send",
+            "method": "message/send",
             "params": {
                 "id": task_id,
                 "message": {
@@ -68,7 +68,7 @@ class TestMultiTurnConversationFormat:
         request2 = {
             "jsonrpc": "2.0",
             "id": 2,
-            "method": "tasks/send",
+            "method": "message/send",
             "params": {
                 "id": task_id,
                 "contextId": session_id,
@@ -107,7 +107,7 @@ class TestMultiTurnConversationFormat:
         
         # Validate request1
         assert request1["jsonrpc"] == "2.0"
-        assert request1["method"] == "tasks/send"
+        assert request1["method"] == "message/send"
         assert "id" in request1["params"]
         assert "message" in request1["params"]
         
@@ -122,7 +122,7 @@ class TestMultiTurnConversationFormat:
         
         # Validate request2
         assert request2["jsonrpc"] == "2.0"
-        assert request2["method"] == "tasks/send"
+        assert request2["method"] == "message/send"
         assert "id" in request2["params"]
         assert "contextId" in request2["params"]
         assert "message" in request2["params"]
