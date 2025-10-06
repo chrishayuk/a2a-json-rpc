@@ -1,9 +1,6 @@
-# tests/protocol_formats/test_conversation_formats.py
+# tests/protocol_formats/test_streaming_formats.py
 """
 Tests for A2A Streaming formats based on the specification.
-
-This file contains tests that validate the request and response formats
-for streaming operations as defined in the A2A specification.
 """
 import pytest
 import json
@@ -26,17 +23,19 @@ class TestStreamingFormat:
         
         # Example from the spec
         request = {
-            "method": "tasks/sendSubscribe",
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "message/stream",
             "params": {
                 "id": task_id,
-                "sessionId": session_id,
+                "contextId": session_id,
                 "message": {
                     "role": "user",
                     "parts": [{
-                        "type": "text",
+                        "kind": "text",
                         "text": "write a long paper describing the attached pictures"
                     }, {
-                        "type": "file",
+                        "kind": "file",
                         "file": {
                             "mimeType": "image/png",
                             "data": "<base64-encoded-content>"
@@ -48,11 +47,14 @@ class TestStreamingFormat:
         }
         
         # Validate the structure
+        assert "jsonrpc" in request
+        assert request["jsonrpc"] == "2.0"
+        assert "id" in request
         assert "method" in request
-        assert request["method"] == "tasks/sendSubscribe"
+        assert request["method"] == "message/stream"
         assert "params" in request
         assert "id" in request["params"]
-        assert "sessionId" in request["params"]
+        assert "contextId" in request["params"]
         assert "message" in request["params"]
         assert "role" in request["params"]["message"]
         assert "parts" in request["params"]["message"]
@@ -60,7 +62,7 @@ class TestStreamingFormat:
         
         # Validate file part
         file_part = request["params"]["message"]["parts"][1]
-        assert file_part["type"] == "file"
+        assert file_part["kind"] == "file"
         assert "file" in file_part
         assert "mimeType" in file_part["file"]
         assert "data" in file_part["file"]
@@ -91,7 +93,7 @@ class TestStreamingFormat:
                 "id": task_id,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 1...>"}
+                        {"kind": "text", "text": "<section 1...>"}
                     ],
                     "index": 0,
                     "append": False,
@@ -108,7 +110,7 @@ class TestStreamingFormat:
                 "id": task_id,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 2...>"}
+                        {"kind": "text", "text": "<section 2...>"}
                     ],
                     "index": 0,
                     "append": True,
@@ -125,7 +127,7 @@ class TestStreamingFormat:
                 "id": 1,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 3...>"}
+                        {"kind": "text", "text": "<section 3...>"}
                     ],
                     "index": 0,
                     "append": True,
@@ -198,6 +200,8 @@ class TestResubscribeFormat:
         
         # Example from the spec
         request = {
+            "jsonrpc": "2.0",
+            "id": 1, 
             "method": "tasks/resubscribe",
             "params": {
                 "id": task_id,
@@ -206,6 +210,9 @@ class TestResubscribeFormat:
         }
         
         # Validate the structure
+        assert "jsonrpc" in request
+        assert request["jsonrpc"] == "2.0"
+        assert "id" in request
         assert "method" in request
         assert request["method"] == "tasks/resubscribe"
         assert "params" in request
@@ -223,7 +230,7 @@ class TestResubscribeFormat:
                 "id": task_id,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 2...>"}
+                        {"kind": "text", "text": "<section 2...>"}
                     ],
                     "index": 0,
                     "append": True,
@@ -240,7 +247,7 @@ class TestResubscribeFormat:
                 "id": task_id,
                 "artifact": {
                     "parts": [
-                        {"type": "text", "text": "<section 3...>"}
+                        {"kind": "text", "text": "<section 3...>"}
                     ],
                     "index": 0,
                     "append": True,
@@ -248,3 +255,14 @@ class TestResubscribeFormat:
                 }
             }
         }
+
+        # Validate chunk structure
+        for response in [response1, response2]:
+            assert response["jsonrpc"] == "2.0"
+            assert "result" in response
+            assert "id" in response["result"]
+            assert "artifact" in response["result"]
+            assert "parts" in response["result"]["artifact"]
+            assert "index" in response["result"]["artifact"]
+            assert "append" in response["result"]["artifact"]
+            assert "lastChunk" in response["result"]["artifact"]

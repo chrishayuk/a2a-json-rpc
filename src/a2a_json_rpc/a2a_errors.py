@@ -28,11 +28,16 @@ class UnsupportedOperationError(JSONRPCError):
     CODE = A2AErrorCode.UNSUPPORTED_OPERATION
 
 
-class TaskRejectedError(JSONRPCError):
-    """A task was rejected by the agent."""
-    CODE = A2AErrorCode.TASK_REJECTED
+class ContentTypeNotSupportedError(JSONRPCError):
+    """A request had an unsupported content type."""
+    CODE = A2AErrorCode.CONTENT_TYPE_NOT_SUPPORTED
 
 
-class AuthenticationRequiredError(JSONRPCError):
-    """Authentication is required to perform this operation."""
-    CODE = A2AErrorCode.AUTHENTICATION_REQUIRED
+class InvalidAgentResponseError(JSONRPCError):
+    """The agent produced an invalid or malformed response."""
+    CODE = A2AErrorCode.INVALID_AGENT_RESPONSE
+
+
+class AuthenticatedExtendedCardNotConfiguredError(JSONRPCError):
+    """An authenticated extended card was requested but not configured."""
+    CODE = A2AErrorCode.AUTHENTICATED_EXTENDED_CARD_NOT_CONFIGURED

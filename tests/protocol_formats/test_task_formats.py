@@ -3,7 +3,10 @@
 Tests for A2A Task operation formats based on the specification.
 
 This file contains tests that validate the request and response formats
-for various task operations (send, get, cancel) as defined in the A2A specification.
+for various task operations (send,                 "contextId": session_id,
+                "status": {
+                    "state": "cancelled"
+                } cancel) as defined in the A2A specification.
 """
 import pytest
 import json
@@ -30,13 +33,13 @@ class TestSendTaskFormat:
         request = {
             "jsonrpc": "2.0",
             "id": 1,
-            "method": "tasks/send",
+            "method": "message/send",
             "params": {
                 "id": task_id,
                 "message": {
                     "role": "user",
                     "parts": [{
-                        "type": "text",
+                        "kind": "text",
                         "text": "tell me a joke"
                     }]
                 },
@@ -47,14 +50,14 @@ class TestSendTaskFormat:
         # Validate the structure
         assert request["jsonrpc"] == "2.0"
         assert "id" in request
-        assert request["method"] == "tasks/send"
+        assert request["method"] == "message/send"
         assert "params" in request
         assert "id" in request["params"]
         assert "message" in request["params"]
         assert "role" in request["params"]["message"]
         assert "parts" in request["params"]["message"]
         assert len(request["params"]["message"]["parts"]) > 0
-        assert "type" in request["params"]["message"]["parts"][0]
+        assert "kind" in request["params"]["message"]["parts"][0]
         assert "text" in request["params"]["message"]["parts"][0]
 
     def test_send_task_response_format(self):
@@ -68,14 +71,14 @@ class TestSendTaskFormat:
             "id": 1,
             "result": {
                 "id": task_id,
-                "sessionId": session_id,
+                "contextId": session_id,
                 "status": {
                     "state": "completed",
                 },
                 "artifacts": [{
                     "name": "joke",
                     "parts": [{
-                        "type": "text",
+                        "kind": "text",
                         "text": "Why did the chicken cross the road? To get to the other side!"
                     }]
                 }],
@@ -88,7 +91,7 @@ class TestSendTaskFormat:
         assert "id" in response
         assert "result" in response
         assert "id" in response["result"]
-        assert "sessionId" in response["result"]
+        assert "contextId" in response["result"]
         assert "status" in response["result"]
         assert "state" in response["result"]["status"]
         assert "artifacts" in response["result"]
@@ -98,7 +101,7 @@ class TestSendTaskFormat:
         artifact = response["result"]["artifacts"][0]
         assert "parts" in artifact
         assert len(artifact["parts"]) > 0
-        assert "type" in artifact["parts"][0]
+        assert "kind" in artifact["parts"][0]
         assert "text" in artifact["parts"][0]
 
 
@@ -140,13 +143,13 @@ class TestGetTaskFormat:
             "id": 1,
             "result": {
                 "id": task_id,
-                "sessionId": session_id,
+                "contextId": session_id,
                 "status": {
                     "state": "completed"
                 },
                 "artifacts": [{
                     "parts": [{
-                        "type": "text",
+                        "kind": "text",
                         "text": "Why did the chicken cross the road? To get to the other side!"
                     }]
                 }],
@@ -155,7 +158,7 @@ class TestGetTaskFormat:
                         "role": "user",
                         "parts": [
                             {
-                                "type": "text",
+                                "kind": "text",
                                 "text": "tell me a joke"
                             }
                         ]
@@ -170,7 +173,7 @@ class TestGetTaskFormat:
         assert "id" in response
         assert "result" in response
         assert "id" in response["result"]
-        assert "sessionId" in response["result"]
+        assert "contextId" in response["result"]
         assert "status" in response["result"]
         assert "state" in response["result"]["status"]
         assert "artifacts" in response["result"]
@@ -181,7 +184,7 @@ class TestGetTaskFormat:
         message = response["result"]["history"][0]
         assert "role" in message
         assert "parts" in message
-        assert "type" in message["parts"][0]
+        assert "kind" in message["parts"][0]
         assert "text" in message["parts"][0]
 
 
@@ -221,7 +224,7 @@ class TestCancelTaskFormat:
             "id": 1,
             "result": {
                 "id": task_id,
-                "sessionId": session_id,
+                "contextId": session_id,
                 "status": {
                     "state": "canceled"
                 },
@@ -234,7 +237,7 @@ class TestCancelTaskFormat:
         assert "id" in response
         assert "result" in response
         assert "id" in response["result"]
-        assert "sessionId" in response["result"]
+        assert "contextId" in response["result"]
         assert "status" in response["result"]
         assert "state" in response["result"]["status"]
         assert response["result"]["status"]["state"] == "canceled"

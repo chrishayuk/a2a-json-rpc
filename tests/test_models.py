@@ -147,14 +147,14 @@ class TestTaskModels:
         assert status.message is None
         assert status.timestamp is None
         
-        # With timestamp
-        now = datetime.now()
+        # With timestamp as ISO 8601 string
+        timestamp_str = "2023-10-27T10:00:00Z"
         status = TaskStatus(
             state=TaskState.completed,
-            timestamp=now
+            timestamp=timestamp_str
         )
         assert status.state == TaskState.completed
-        assert status.timestamp == now
+        assert status.timestamp == timestamp_str
 
     def test_task_id_params(self):
         """Test TaskIdParams model."""
@@ -176,16 +176,16 @@ class TestTaskModels:
         """Test TaskQueryParams model."""
         params = TaskQueryParams(id="task-123")
         assert params.id == "task-123"
-        assert params.history_length is None
+        assert params.historyLength is None
         assert params.metadata is None
         
         params = TaskQueryParams(
             id="task-123",
-            history_length=5,
+            historyLength=5,
             metadata={"include_artifacts": True}
         )
         assert params.id == "task-123"
-        assert params.history_length == 5
+        assert params.historyLength == 5
         assert params.metadata == {"include_artifacts": True}
 
 
@@ -207,17 +207,14 @@ class TestPushNotificationModels:
         push_config = PushNotificationConfig(url="https://example.com/callback")
         
         config = TaskPushNotificationConfig(
-            id="task-123",
-            push_notification_config=push_config
+            taskId="task-123",
+            pushNotificationConfig=push_config
         )
-        assert config.id == "task-123"
-        assert config.push_notification_config.url == "https://example.com/callback"
-        
-        # Test property alias
+        assert config.taskId == "task-123"
         assert config.pushNotificationConfig.url == "https://example.com/callback"
         
         with pytest.raises(ValidationError):
-            TaskPushNotificationConfig(id="task-123")  # Missing required push_notification_config
+            TaskPushNotificationConfig(taskId="task-123")  # Missing required pushNotificationConfig
 
 
 class TestMessageModels:
@@ -225,72 +222,72 @@ class TestMessageModels:
 
     def test_text_part(self):
         """Test TextPart model."""
-        part = TextPart(type="text", text="Hello, world!")
-        assert part.type == "text"
+        part = TextPart(kind="text", text="Hello, world!")
+        assert part.kind == "text"
         assert part.text == "Hello, world!"
         assert part.metadata is None
         
         part = TextPart(
-            type="text", 
+            kind="text", 
             text="Hello, world!",
             metadata={"format": "plain"}
         )
         assert part.metadata == {"format": "plain"}
         
         with pytest.raises(ValidationError):
-            TextPart(type="text")  # Missing required text
+            TextPart(kind="text")  # Missing required text
             
         with pytest.raises(ValidationError):
-            TextPart(text="Hello")  # Missing or incorrect type
+            TextPart(text="Hello")  # Missing required kind
 
     def test_file_part(self):
         """Test FilePart model."""
         part = FilePart(
-            type="file",
+            kind="file",
             file={
                 "name": "sample.txt",
-                "mime_type": "text/plain",
+                "mimeType": "text/plain",
                 "bytes": "SGVsbG8sIHdvcmxkIQ=="  # base64 encoded "Hello, world!"
             }
         )
-        assert part.type == "file"
+        assert part.kind == "file"
         assert part.file.name == "sample.txt"
-        assert part.file.mime_type == "text/plain"
+        assert part.file.mimeType == "text/plain"
         assert part.file.bytes == "SGVsbG8sIHdvcmxkIQ=="
         assert part.metadata is None
         
         # With URI instead of bytes
         part = FilePart(
-            type="file",
+            kind="file",
             file={
                 "name": "sample.txt",
                 "uri": "https://example.com/files/sample.txt"
             }
         )
-        assert part.type == "file"
+        assert part.kind == "file"
         assert part.file.uri == "https://example.com/files/sample.txt"
         
         with pytest.raises(ValidationError):
-            FilePart(type="file")  # Missing required file
+            FilePart(kind="file")  # Missing required file
             
         with pytest.raises(ValidationError):
-            FilePart(file={"name": "sample.txt"})  # Missing type
+            FilePart(file={"name": "sample.txt"})  # Missing kind
 
     def test_data_part(self):
         """Test DataPart model."""
         part = DataPart(
-            type="data",
+            kind="data",
             data={"count": 42, "items": ["apple", "banana"]}
         )
-        assert part.type == "data"
+        assert part.kind == "data"
         assert part.data == {"count": 42, "items": ["apple", "banana"]}
         assert part.metadata is None
         
         with pytest.raises(ValidationError):
-            DataPart(type="data")  # Missing required data
+            DataPart(kind="data")  # Missing required data
             
         with pytest.raises(ValidationError):
-            DataPart(data={})  # Missing type
+            DataPart(data={})  # Missing kind
 
     @pytest.mark.skip(reason="Role comparison in generated model")
     def test_message(self):
@@ -331,89 +328,106 @@ class TestAgentModels:
     
     def test_agent_capabilities(self):
         """Test AgentCapabilities model."""
-        # Default capabilities (all False)
+        # Default capabilities (all None)
         caps = AgentCapabilities()
-        assert caps.streaming is False
-        assert caps.push_notifications is False
-        assert caps.state_transition_history is False
+        assert caps.streaming is None
+        assert caps.pushNotifications is None
+        assert caps.stateTransitionHistory is None
+        assert caps.extensions is None
         
         # With capabilities enabled
         caps = AgentCapabilities(
             streaming=True,
-            push_notifications=True,
-            state_transition_history=True
+            pushNotifications=True,
+            stateTransitionHistory=True
         )
         assert caps.streaming is True
-        assert caps.push_notifications is True
-        assert caps.state_transition_history is True
+        assert caps.pushNotifications is True
+        assert caps.stateTransitionHistory is True
     
     def test_agent_skill(self):
         """Test AgentSkill model."""
+    def test_agent_skill(self):
+        """Test AgentSkill model."""
+        # Minimal skill with required fields
         skill = AgentSkill(
             id="text-generation",
-            name="Text Generation"
+            name="Text Generation",
+            description="Generates text based on prompts",
+            tags=["language", "creative"]
         )
         assert skill.id == "text-generation"
         assert skill.name == "Text Generation"
-        assert skill.description is None
-        assert skill.tags is None
+        assert skill.description == "Generates text based on prompts"
+        assert skill.tags == ["language", "creative"]
         assert skill.examples is None
-        assert skill.input_modes is None
-        assert skill.output_modes is None
+        assert skill.inputModes is None
+        assert skill.outputModes is None
+        assert skill.security is None
         
-        # Full skill definition
+        # Full skill definition with optional fields
         skill = AgentSkill(
             id="text-generation",
             name="Text Generation",
             description="Generates text based on prompts",
             tags=["language", "creative"],
             examples=["Write a short story", "Generate a poem"],
-            input_modes=["text"],
-            output_modes=["text"]
+            inputModes=["text"],
+            outputModes=["text"],
+            security=[{"oauth2": ["read", "write"]}]
         )
         assert skill.id == "text-generation"
         assert skill.name == "Text Generation"
         assert skill.description == "Generates text based on prompts"
         assert skill.tags == ["language", "creative"]
         assert skill.examples == ["Write a short story", "Generate a poem"]
-        assert skill.input_modes == ["text"]
-        assert skill.output_modes == ["text"]
+        assert skill.inputModes == ["text"]
+        assert skill.outputModes == ["text"]
+        assert skill.security == [{"oauth2": ["read", "write"]}]
         
         with pytest.raises(ValidationError):
-            AgentSkill(id="text-generation")  # Missing required name
+            AgentSkill(id="text-generation", name="Text Generation")  # Missing required description and tags
         
         with pytest.raises(ValidationError):
-            AgentSkill(name="Text Generation")  # Missing required id
+            AgentSkill(name="Text Generation", description="Test", tags=["test"])  # Missing required id
     
     def test_agent_card(self):
         """Test AgentCard model."""
         skill = AgentSkill(
             id="text-generation",
-            name="Text Generation"
+            name="Text Generation",
+            description="Generates text based on prompts",
+            tags=["language", "creative"]
         )
         
         capabilities = AgentCapabilities(streaming=True)
         
+        # Minimal agent card with required fields
         card = AgentCard(
             name="Sample Agent",
+            description="A sample agent for testing",
             url="https://example.com/agent",
             version="1.0.0",
+            protocolVersion="1.0.0",
             capabilities=capabilities,
-            skills=[skill]
+            skills=[skill],
+            defaultInputModes=["text"],
+            defaultOutputModes=["text"]
         )
         assert card.name == "Sample Agent"
-        assert card.description is None
+        assert card.description == "A sample agent for testing"
         assert card.url == "https://example.com/agent"
-        assert card.provider is None
         assert card.version == "1.0.0"
-        assert card.documentation_url is None
+        assert card.protocolVersion == "1.0.0"
         assert card.capabilities.streaming is True
-        assert card.capabilities.push_notifications is False
-        assert card.authentication is None
-        assert card.default_input_modes == ["text"]  # Default value
-        assert card.default_output_modes == ["text"]  # Default value
+        assert card.defaultInputModes == ["text"]
+        assert card.defaultOutputModes == ["text"]
         assert len(card.skills) == 1
         assert card.skills[0].id == "text-generation"
+        assert card.provider is None
+        assert card.documentationUrl is None
+        assert card.iconUrl is None
+        assert card.preferredTransport == "JSONRPC"  # Default value
         
         # Test with missing required fields
         with pytest.raises(ValidationError):
@@ -422,7 +436,7 @@ class TestAgentModels:
                 version="1.0.0",
                 capabilities=capabilities,
                 skills=[skill]
-            )  # Missing name
+            )  # Missing name, description, protocolVersion, defaultInputModes, defaultOutputModes
         
         with pytest.raises(ValidationError):
             AgentCard(

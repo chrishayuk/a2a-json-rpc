@@ -1,12 +1,13 @@
 # a2a_json_rpc/a2a_error_codes.py
 from enum import IntEnum
 
+
 class A2AErrorCode(IntEnum):
-    """A2A-specific error codes."""
-    # A2A-specific
+    """A2A-specific error codes from the spec."""
     TASK_NOT_FOUND = -32001
     TASK_NOT_CANCELABLE = -32002
     PUSH_NOTIFICATIONS_NOT_SUPPORTED = -32003
     UNSUPPORTED_OPERATION = -32004
-    TASK_REJECTED = -32005
-    AUTHENTICATION_REQUIRED = -32006
+    CONTENT_TYPE_NOT_SUPPORTED = -32005
+    INVALID_AGENT_RESPONSE = -32006
+    AUTHENTICATED_EXTENDED_CARD_NOT_CONFIGURED = -32007
